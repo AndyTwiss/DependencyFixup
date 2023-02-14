@@ -65,6 +65,16 @@ namespace DependencyFixup
 
             ScanAssembly(assembly);
 
+            _flatList = _flatList.OrderBy(f => f.AssemblyName).ToList();
+            var assemblyDependencyTree = _flatList.First(d => d.AssemblyName == assembly.FullName);
+            List<string> output = new List<string>();
+            PrintAssemblyDependancies(assemblyDependencyTree, output);
+            foreach (var line in output)
+                Console.WriteLine(line);
+
+            //Console.ReadKey();
+            //return;
+
             _assemblyFiles.Sort();
 
             Console.WriteLine("References");
@@ -84,6 +94,8 @@ namespace DependencyFixup
                 FixupConfigFiles(closestFilename, args[1]);
                 
             }
+
+            Console.ReadKey();
         }
 
         private object GetShortName(string assemblyName)
@@ -185,6 +197,21 @@ namespace DependencyFixup
             }
         }
 
+        private void PrintAssemblyDependancies(Dependency foundAssembly, List<String> output, int level = 0)
+        {
+            if (foundAssembly.AssemblyName.StartsWith("DevExpress"))
+                return;
+
+            output.Add(foundAssembly.AssemblyName.PadLeft(foundAssembly.AssemblyName.Length + level, '\t'));
+
+            level++;
+            foreach (var child in foundAssembly.Dependencies)
+            {
+                PrintAssemblyDependancies(child, output, level);
+            }
+            level--;
+        }
+
         private void PrintAssemblyHeirarchy(Dependency foundAssembly, List<String> output)
         {
             output.Insert(0, foundAssembly.AssemblyName);
@@ -197,10 +224,11 @@ namespace DependencyFixup
 
             if (foundAssembly.Parents.Count == 0)
             {
-                foreach(var line in output)
+                foreach (var line in output)
                     Console.WriteLine(line);
             }
         }
+
 
         private void ScanAssembly(Assembly assembly)
         {
